@@ -1,5 +1,11 @@
+import { NextRequest } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
-export async function GET() {
-  const products = await prisma.product.findMany({ include: { supplier: true }, orderBy: { createdAt: "desc" } });
-  return Response.json({ products });
+
+const Body = z.object({ supplierId: z.string(), period: z.string(), payload: z.any() });
+
+export async function POST(req: NextRequest) {
+  const data = Body.parse(await req.json());
+  const report = await prisma.monthlyReport.create({ data });
+  return Response.json({ ok: true, report });
 }
