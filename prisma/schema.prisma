@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SUPPLIER
+  PARTNER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+  supplier  Supplier?
+  partner   Partner?
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  products  Product[]
+  orders    Order[]
+  reports   MonthlyReport[]
+}
+
+model Partner {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+model Product {
+  id            String   @id
+  name          String
+  publicPrice   Int
+  resellerPrice Int
+  supplierId    String
+  supplier      Supplier  @relation(fields: [supplierId], references: [id])
+  createdAt     DateTime @default(now())
+}
+
+model Order {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  partnerId    String
+  partner      Partner  @relation(fields: [partnerId], references: [id])
+  supplierId   String
+  supplier     Supplier @relation(fields: [supplierId], references: [id])
+  deliveryJson Json
+  status       String   @default("VALIDATION")
+  createdAt    DateTime @default(now())
+  items        OrderItem[]
+  tracking     Tracking[]
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id])
+  productId String
+  qty       Int
+  unitPrice Int
+}
+
+model Tracking {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  number    String
+  carrier   String?
+  createdAt DateTime @default(now())
+}
+
+model MonthlyReport {
+  id         String   @id @default(cuid())
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  period     String
+  payload    Json
+  createdAt  DateTime @default(now())
+}
